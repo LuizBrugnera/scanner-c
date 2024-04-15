@@ -1,0 +1,1 @@
+mkdir -p build && gcc -o build/main src/main.c src/G2-scanner-lib.c && ./build/main
