@@ -18,8 +18,9 @@ int main(int argc, char const *argv[])
     Token *token;
     while ((token = getToken(file)) != NULL)
     {
-        printf("#%d -> %s -> %s -> %s\n",
+        printf("#%d:%d -> %s -> %s -> %s\n",
                token->line,
+               token->column,
                token_type_str[token->type],
                token->type == TKN_REJECT ? "Reject" : "Accept",
                token->lexeme);

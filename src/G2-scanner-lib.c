@@ -33,13 +33,12 @@ const char *reswords[] = {
 };
 
 // Função para alocar memória para um novo token
-Token *createToken(enum TokenType type, int line, int col_start, int col_end, const char *lexeme)
+Token *createToken(enum TokenType type, int line, int col_start, const char *lexeme)
 {
     Token *token = malloc(sizeof(Token));
     token->type = type;
     token->line = line;
-    token->column_start = col_start;
-    token->column_end = col_end;
+    token->column = col_start;
     token->lexeme = strdup(lexeme);
     return token;
 }
@@ -70,81 +69,72 @@ char *delimeter_to_string(char c)
         str = "CR"; // Carriage Return
         break;
     default:
-        str = "Unknown";
+        str = "UNK";
         break;
     }
 
     return str;
 }
 
-// Função para obter o próximo token
 Token *getToken(FILE *file)
 {
     static int line = 1;
     static int column = 0;
-    static char buffer[1024];
-    static int buf_pos = 0;
-    static int buf_len = 0;
+    char c;
 
-    if (buf_pos >= buf_len)
+    int buffer_size = 1000;
+    char buffer[buffer_size]; // Usando um buffer de tamanho fixo
+    int buf_index = 0;        // Índice para adicionar caracteres ao buffer
+
+    while ((c = fgetc(file)) != EOF)
     {
-        if (fgets(buffer, sizeof(buffer), file) == NULL)
-        {
-            return NULL; // Fim do arquivo
-        }
-        buf_len = strlen(buffer);
-        buf_pos = 0;
-        column = 0;
-    }
-
-    while (buf_pos < buf_len)
-    {
-        char current = buffer[buf_pos];
-
-        // Detectar comentários
-        if (current == '{')
-        {
-            int start = column;
-            buf_pos++;
-            column++;
-            while (buf_pos < buf_len && buffer[buf_pos] != '}')
-            {
-                buf_pos++;
-                column++;
-            }
-            if (buf_pos < buf_len && buffer[buf_pos] == '}')
-            {
-                buf_pos++; // Passar por cima do '}'
-                column++;
-                return createToken(TKN_COMMENT, line, start, column, "Comentário");
-            }
-            else
-            {
-                // Final do buffer alcançado sem fechar o comentário
-                // Aqui você poderia tratar isso como um comentário não fechado ou esperar por mais dados
-                return createToken(TKN_REJECT, line, start, column, "Comentário não fechado");
-            }
-        }
-
-        // Detectar caracteres rejeitados (espaço, tabulação, etc.)
-        if (current == ' ' || current == '\t' || current == '\n' || current == '\r')
-        {
-            int start = column;
-            buf_pos++;
-            column++;
-            return createToken(TKN_REJECT, line, start, column, delimeter_to_string(current));
-        }
-
-        buf_pos++;
         column++;
+
+        // Delimitadores
+        if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
+        {
+            int line_start = line;
+            int col_start = column;
+
+            if (c == '\n')
+            {
+                line++;
+                column = 0; // Reinicia a contagem de colunas na nova linha
+            }
+
+            // Cria e retorna token de rejeição para delimitadores
+            return createToken(TKN_REJECT, line_start, col_start, delimeter_to_string(c));
+        }
+
+        // Comentários
+        if (c == '{')
+        {
+            int col_start = column;         // Início do comentário
+            memset(buffer, 0, buffer_size); // Limpa o buffer
+            buffer[buf_index++] = c;        // Adiciona '{' ao buffer
+
+            // Lê o restante do comentário
+            while ((c = fgetc(file)) != EOF && buf_index < buffer_size - 1)
+            {
+                buffer[buf_index++] = c == '\n' ? ' ' : c;
+                column++;
+
+                if (c == '}')
+                {
+                    buffer[buf_index] = '\0'; // Finaliza a string no buffer
+                    return createToken(TKN_COMMENT, line, col_start, buffer);
+                }
+            }
+
+            // Se sair do loop sem fechar o comentário
+            if (c == EOF)
+            {
+                buffer[buf_index] = '\0';
+                return createToken(TKN_REJECT, line, col_start, "Comentário não fechado");
+            }
+        }
     }
 
-    // Se chegamos ao final do buffer sem retornar, tentamos ler mais dados
-    if (buf_pos >= buf_len)
-    {
-        buf_pos = 0; // Reset buffer position for the next read
-        buf_len = 0; // Reset buffer length to force a read in the next call
-    }
-
+    // Se alcançar EOF sem encontrar mais tokens
     return NULL;
 }

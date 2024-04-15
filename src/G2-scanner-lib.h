@@ -30,8 +30,7 @@ typedef struct
 {
     enum TokenType type; // Tipo do token
     int line;            // Linha onde o token foi encontrado
-    int column_start;    // Coluna de início do token
-    int column_end;      // Coluna de fim do token
+    int column;          // Coluna inicial do token
     char *lexeme;        // Texto do token
 } Token;
 
@@ -41,7 +40,7 @@ extern const char *token_type_str[];
 // Palavras reservadas
 extern const char *reswords[];
 
-Token *createToken(enum TokenType type, int line, int col_start, int col_end, const char *lexeme);
+Token *createToken(enum TokenType type, int line, int col_start, const char *lexeme);
 
 void freeToken(Token *token);
 
