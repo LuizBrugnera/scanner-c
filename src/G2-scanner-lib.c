@@ -76,6 +76,24 @@ char *delimeter_to_string(char c)
     return str;
 }
 
+// Funcao para detectar apenas letras, maiusculas ou minusculas
+int isLetter(char c)
+{
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+// Funcao para detectar apenas digitos
+int isDigit(char c)
+{
+    return c >= '0' && c <= '9';
+}
+
+// Funcao para detectar apenas digitos hexadecimais
+int isHexDigit(char c)
+{
+    return isDigit(c) || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
+}
+
 Token *getToken(FILE *file)
 {
     static int line = 1;
@@ -132,6 +150,51 @@ Token *getToken(FILE *file)
                 buffer[buf_index] = '\0';
                 return createToken(TKN_REJECT, line, col_start, "Comentário não fechado");
             }
+        } 
+
+        if (c == ':')
+        {
+            int col_start = column;
+            memset(buffer, 0, buffer_size);
+            buffer[buf_index++] = c;
+
+            if ((c = fgetc(file)) == '=')
+            {
+                buffer[buf_index++] = c;
+                buffer[buf_index] = '\0';
+                return createToken(TKN_ASSIGN, line, col_start, buffer);
+            }
+
+            buffer[buf_index] = '\0';
+            return createToken(TKN_REJECT, line, col_start, buffer);
+        }
+
+        // Detectar variaveis
+        if (isLetter(c))
+        {
+            int col_start = column;
+            memset(buffer, 0, buffer_size);
+            buffer[buf_index++] = c;
+            column++;
+                
+            // Continua lendo enquanto for letra, dígito ou '_'
+            while ((c = fgetc(file)) != EOF && (isLetter(c) || isDigit(c) || c == '_') && buf_index < buffer_size - 1)
+            {
+                buffer[buf_index++] = c;
+                column++;
+            }
+
+            buffer[buf_index] = '\0';
+            
+            // Verifica se é uma palavra reservada
+            for (int i = 0; i < sizeof(reswords) / sizeof(reswords[0]); i++)
+            {
+                if (strcmp(buffer, reswords[i]) == 0)
+                {
+                    return createToken(TKN_RESWORD, line, col_start, buffer);
+                }
+            }
+            return createToken(TKN_VAR, line, col_start, buffer);
         }
     }
 

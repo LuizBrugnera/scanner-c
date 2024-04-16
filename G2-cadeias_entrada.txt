@@ -1,5 +1,3 @@
-{ Comentario }
+variavel := asd22
 
-{
-    Comentario multilinha
-}
+if
