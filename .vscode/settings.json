@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "stdlib.h": "c",
-        "g2-scanner-lib.h": "c"
+        "g2-scanner-lib.h": "c",
+        "stdio.h": "c"
     }
 }

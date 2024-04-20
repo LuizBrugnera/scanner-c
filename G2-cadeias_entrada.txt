@@ -1,3 +1,39 @@
-variavel := asd22
-
+{
+Parser
+Cadeias de entrada
+}
+{ DELIMITADORES }
+; ( )
+{ IDENTIFICADORES }
+a
+b123
+variavel_1
+VAR_123
+id_muito_grande_000000000000000
+{ INTEIROS }
+512
+-1024
+9999999999999
+{ HEXADECIMAL }
+#FFFF
+#FAFA
+#0101
+{ PALAVRAS RESERVADAS }
 if
+then
+else
+end
+repeat
+until
+read
+write
+{ OPERADORES }
+=
+!=
+>=
+<=
+:=
+{ CODIGO }
+if (id_inteiro >= hexa) then
+    write id_inteiro;
+end
